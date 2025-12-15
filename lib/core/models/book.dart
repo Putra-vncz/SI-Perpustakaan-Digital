@@ -1,0 +1,73 @@
+import '../enums/enums.dart';
+
+class Book {
+  final String id;
+  final String title;
+  final String author;
+  final String coverUrl;
+  final BookType type;
+  final int stock;
+  final String? pdfUrl;
+  final String? shelfLocation;
+
+  const Book({
+    required this.id,
+    required this.title,
+    required this.author,
+    required this.coverUrl,
+    required this.type,
+    required this.stock,
+    this.pdfUrl,
+    this.shelfLocation,
+  });
+
+  bool get isAvailable => type == BookType.ebook || stock > 0;
+
+  Book copyWith({
+    String? id,
+    String? title,
+    String? author,
+    String? coverUrl,
+    BookType? type,
+    int? stock,
+    String? pdfUrl,
+    String? shelfLocation,
+  }) {
+    return Book(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      author: author ?? this.author,
+      coverUrl: coverUrl ?? this.coverUrl,
+      type: type ?? this.type,
+      stock: stock ?? this.stock,
+      pdfUrl: pdfUrl ?? this.pdfUrl,
+      shelfLocation: shelfLocation ?? this.shelfLocation,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'author': author,
+      'coverUrl': coverUrl,
+      'type': type.name,
+      'stock': stock,
+      'pdfUrl': pdfUrl,
+      'shelfLocation': shelfLocation,
+    };
+  }
+
+  factory Book.fromJson(Map<String, dynamic> json) {
+    return Book(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      author: json['author'] as String,
+      coverUrl: json['coverUrl'] as String,
+      type: BookType.values.firstWhere((e) => e.name == json['type']),
+      stock: json['stock'] as int,
+      pdfUrl: json['pdfUrl'] as String?,
+      shelfLocation: json['shelfLocation'] as String?,
+    );
+  }
+}
