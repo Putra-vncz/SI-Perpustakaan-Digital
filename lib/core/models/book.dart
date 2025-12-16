@@ -29,6 +29,15 @@ class Book {
   @HiveField(7)
   final String? shelfLocation;
 
+  @HiveField(8)
+  final String description;
+
+  @HiveField(9)
+  final String category;
+
+  @HiveField(10)
+  final String? contentUrl;
+
   const Book({
     required this.id,
     required this.title,
@@ -38,6 +47,9 @@ class Book {
     required this.stock,
     this.pdfUrl,
     this.shelfLocation,
+    this.description = '',
+    this.category = 'Umum',
+    this.contentUrl,
   });
 
   bool get isAvailable => type == BookType.ebook || stock > 0;
@@ -51,6 +63,9 @@ class Book {
     int? stock,
     String? pdfUrl,
     String? shelfLocation,
+    String? description,
+    String? category,
+    String? contentUrl,
   }) {
     return Book(
       id: id ?? this.id,
@@ -61,6 +76,9 @@ class Book {
       stock: stock ?? this.stock,
       pdfUrl: pdfUrl ?? this.pdfUrl,
       shelfLocation: shelfLocation ?? this.shelfLocation,
+      description: description ?? this.description,
+      category: category ?? this.category,
+      contentUrl: contentUrl ?? this.contentUrl,
     );
   }
 
@@ -74,6 +92,9 @@ class Book {
       'stock': stock,
       'pdfUrl': pdfUrl,
       'shelfLocation': shelfLocation,
+      'description': description,
+      'category': category,
+      'contentUrl': contentUrl,
     };
   }
 
@@ -87,6 +108,9 @@ class Book {
       stock: json['stock'] as int,
       pdfUrl: json['pdfUrl'] as String?,
       shelfLocation: json['shelfLocation'] as String?,
+      description: json['description'] as String? ?? '',
+      category: json['category'] as String? ?? 'Umum',
+      contentUrl: json['contentUrl'] as String?,
     );
   }
 }

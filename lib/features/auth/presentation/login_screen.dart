@@ -83,21 +83,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            children: [
-              const SizedBox(height: 60),
-              _buildHeader(context),
-              const SizedBox(height: 48),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: _loginMode == LoginMode.none
-                    ? _buildLoginSelection(authState)
-                    : _buildLoginForm(authState),
-              ),
-              const SizedBox(height: 32),
-            ],
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildHeader(context),
+                const SizedBox(height: 40),
+                _buildCard(authState),
+              ],
+            ),
           ),
         ),
       ),
@@ -107,147 +103,246 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _buildHeader(BuildContext context) {
     return Column(
       children: [
+        // Logo
         Container(
-          width: 100,
-          height: 100,
+          width: 80,
+          height: 80,
           decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(24),
+            gradient: AppColors.primaryGradient,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-          child: const Icon(LucideIcons.library, size: 48, color: Colors.white),
+          child: const Icon(LucideIcons.bookOpen, size: 40, color: Colors.white),
         ),
         const SizedBox(height: 24),
         Text(
-          'University E-Library',
-          style: Theme.of(context).textTheme.headlineMedium,
+          'FMIPA Library',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Your gateway to knowledge',
-          style: Theme.of(context).textTheme.bodyMedium,
+          'Sistem Informasi Perpustakaan Digital\nFakultas Matematika dan Ilmu Pengetahuan Alam',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+          textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+
+  Widget _buildCard(AuthState authState) {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 400),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppShadows.cardShadow,
+      ),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _loginMode == LoginMode.none
+            ? _buildLoginSelection(authState)
+            : _buildLoginForm(authState),
+      ),
     );
   }
 
   Widget _buildLoginSelection(AuthState authState) {
     return Column(
       key: const ValueKey('selection'),
+      mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton.icon(
-            onPressed: authState.isLoading
-                ? null
-                : () => setState(() => _loginMode = LoginMode.student),
-            icon: const Icon(LucideIcons.graduationCap),
-            label: const Text('Login as Student'),
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: OutlinedButton.icon(
-            onPressed: authState.isLoading
-                ? null
-                : () => setState(() => _loginMode = LoginMode.admin),
-            icon: const Icon(LucideIcons.shield),
-            label: const Text('Login as Admin'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primary,
-              side: const BorderSide(color: AppColors.primary),
-            ),
-          ),
-        ),
-        const SizedBox(height: 32),
-        const Divider(),
-        const SizedBox(height: 16),
         Text(
-          'Belum punya akun?',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
+          'Selamat Datang',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
         ),
+        const SizedBox(height: 8),
+        Text(
+          'Pilih jenis akun untuk masuk',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 24),
+        _buildLoginOption(
+          icon: LucideIcons.graduationCap,
+          title: 'Mahasiswa',
+          subtitle: 'Login dengan NIM',
+          color: AppColors.primary,
+          onTap: authState.isLoading
+              ? null
+              : () => setState(() => _loginMode = LoginMode.student),
+        ),
         const SizedBox(height: 12),
-        TextButton(
-          onPressed: () => context.push('/register'),
-          child: const Text('Daftar Sekarang'),
+        _buildLoginOption(
+          icon: LucideIcons.shield,
+          title: 'Admin',
+          subtitle: 'Login dengan Email',
+          color: AppColors.primaryDark,
+          onTap: authState.isLoading
+              ? null
+              : () => setState(() => _loginMode = LoginMode.admin),
+        ),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(child: Divider(color: Colors.grey.shade300)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'atau',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+            Expanded(child: Divider(color: Colors.grey.shade300)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Belum punya akun? ',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            GestureDetector(
+              onTap: () => context.push('/register'),
+              child: Text(
+                'Daftar',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
+  Widget _buildLoginOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                LucideIcons.chevronRight,
+                color: Colors.grey.shade400,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildLoginForm(AuthState authState) {
     final isStudent = _loginMode == LoginMode.student;
 
     return Column(
       key: ValueKey(_loginMode),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            IconButton(
-              onPressed: _backToSelection,
-              icon: const Icon(LucideIcons.arrowLeft),
-              color: AppColors.textSecondary,
+            GestureDetector(
+              onTap: _backToSelection,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  LucideIcons.arrowLeft,
+                  size: 20,
+                  color: AppColors.textSecondary,
+                ),
+              ),
             ),
-            const SizedBox(width: 8),
-            Text(
-              isStudent ? 'Login Mahasiswa' : 'Login Admin',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                isStudent ? 'Login Mahasiswa' : 'Login Admin',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 24),
-
-        // Role indicator
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: (isStudent ? AppColors.secondary : AppColors.primary)
-                .withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                isStudent ? LucideIcons.graduationCap : LucideIcons.shield,
-                color: isStudent ? AppColors.secondary : AppColors.primary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  isStudent
-                      ? 'Masuk dengan NIM dan Password'
-                      : 'Masuk dengan Email dan Password',
-                  style: TextStyle(
-                    color: isStudent ? AppColors.secondary : AppColors.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // Login Form
         Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // NIM field (student) or Email field (admin)
+              Text(
+                isStudent ? 'NIM' : 'Email',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
               if (isStudent)
                 TextFormField(
                   controller: _nimController,
-                  decoration: _inputDecoration(
-                    label: 'NIM',
-                    hint: 'Masukkan 9 digit NIM',
-                    icon: LucideIcons.hash,
+                  decoration: InputDecoration(
+                    hintText: 'Masukkan 9 digit NIM',
+                    prefixIcon: const Icon(LucideIcons.hash),
                   ),
                   keyboardType: TextInputType.number,
                   inputFormatters: [
@@ -268,10 +363,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               else
                 TextFormField(
                   controller: _emailController,
-                  decoration: _inputDecoration(
-                    label: 'Email',
-                    hint: 'Masukkan email admin',
-                    icon: LucideIcons.mail,
+                  decoration: InputDecoration(
+                    hintText: 'Masukkan email',
+                    prefixIcon: const Icon(LucideIcons.mail),
                   ),
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
@@ -285,22 +379,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     return null;
                   },
                 ),
-              const SizedBox(height: 16),
-
-              // Password field
+              const SizedBox(height: 20),
+              Text(
+                'Password',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _passwordController,
-                decoration: _inputDecoration(
-                  label: 'Password',
-                  hint: 'Masukkan password',
-                  icon: LucideIcons.lock,
-                ).copyWith(
+                decoration: InputDecoration(
+                  hintText: 'Masukkan password',
+                  prefixIcon: const Icon(LucideIcons.lock),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword
-                          ? LucideIcons.eyeOff
-                          : LucideIcons.eye,
-                      color: AppColors.textSecondary,
+                      _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
                     ),
                     onPressed: () {
                       setState(() => _obscurePassword = !_obscurePassword);
@@ -318,17 +410,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 },
               ),
               const SizedBox(height: 24),
-
-              // Login Button
               SizedBox(
                 width: double.infinity,
-                height: 56,
+                height: 52,
                 child: ElevatedButton(
                   onPressed: authState.isLoading ? null : _submitLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        isStudent ? AppColors.secondary : AppColors.primary,
-                  ),
                   child: authState.isLoading
                       ? const SizedBox(
                           width: 24,
@@ -338,49 +424,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'Masuk',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      : const Text('Masuk'),
                 ),
               ),
             ],
           ),
         ),
       ],
-    );
-  }
-
-  InputDecoration _inputDecoration({
-    required String label,
-    required String hint,
-    required IconData icon,
-  }) {
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      prefixIcon: Icon(icon),
-      filled: true,
-      fillColor: AppColors.surface,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade200),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.error),
-      ),
     );
   }
 }

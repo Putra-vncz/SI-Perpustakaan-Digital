@@ -25,13 +25,16 @@ class BookAdapter extends TypeAdapter<Book> {
       stock: fields[5] as int,
       pdfUrl: fields[6] as String?,
       shelfLocation: fields[7] as String?,
+      description: fields[8] as String,
+      category: fields[9] as String,
+      contentUrl: fields[10] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Book obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -47,7 +50,13 @@ class BookAdapter extends TypeAdapter<Book> {
       ..writeByte(6)
       ..write(obj.pdfUrl)
       ..writeByte(7)
-      ..write(obj.shelfLocation);
+      ..write(obj.shelfLocation)
+      ..writeByte(8)
+      ..write(obj.description)
+      ..writeByte(9)
+      ..write(obj.category)
+      ..writeByte(10)
+      ..write(obj.contentUrl);
   }
 
   @override

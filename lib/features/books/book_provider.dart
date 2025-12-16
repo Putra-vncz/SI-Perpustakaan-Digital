@@ -52,13 +52,21 @@ class BookListNotifier extends Notifier<BookListState> {
   }
 
   HiveDataService get _mockService => ref.read(mockDataServiceProvider);
+  EbookApiService get _ebookService => ref.read(ebookApiServiceProvider);
 
   Future<void> _loadBooks() async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final books = await _mockService.getAllBooks();
-      state = state.copyWith(books: books, isLoading: false);
+      // Load physical books from Hive
+      final physicalBooks = await _mockService.getAllBooks();
+
+      // Load ebooks from API
+      final ebooks = await _ebookService.getEbooks();
+
+      // Combine both lists
+      final allBooks = [...physicalBooks, ...ebooks];
+      state = state.copyWith(books: allBooks, isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -125,6 +133,10 @@ class BookListNotifier extends Notifier<BookListState> {
 }
 
 // Providers
+final ebookApiServiceProvider = Provider<EbookApiService>((ref) {
+  return EbookApiService.instance;
+});
+
 final bookListProvider = NotifierProvider<BookListNotifier, BookListState>(
   BookListNotifier.new,
 );

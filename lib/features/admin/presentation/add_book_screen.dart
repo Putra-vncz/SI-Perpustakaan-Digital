@@ -135,7 +135,7 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
               // Book Type Dropdown
               _buildLabel('Book Type'),
               DropdownButtonFormField<BookType>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: _inputDecoration('Select type'),
                 items: const [
                   DropdownMenuItem(

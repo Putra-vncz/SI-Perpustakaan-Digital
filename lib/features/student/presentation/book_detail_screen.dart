@@ -18,7 +18,6 @@ class BookDetailScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final bookingState = ref.watch(bookingProvider);
 
-    // Listen for booking results
     ref.listen<BookingState>(bookingProvider, (previous, next) {
       if (next.successMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -43,7 +42,7 @@ class BookDetailScreen extends ConsumerWidget {
     if (book == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text('Book not found')),
+        body: const Center(child: Text('Buku tidak ditemukan')),
       );
     }
 
@@ -51,62 +50,67 @@ class BookDetailScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          // App Bar with Cover
+          // App Bar
           SliverAppBar(
-            expandedHeight: 350,
+            expandedHeight: 320,
             pinned: true,
-            backgroundColor: AppColors.primary,
-            leading: IconButton(
-              icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
-              onPressed: () => context.pop(),
+            backgroundColor: AppColors.surface,
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(LucideIcons.arrowLeft, color: AppColors.textPrimary),
+              ),
             ),
             flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          AppColors.primary,
-                          AppColors.primary.withValues(alpha: 0.8),
-                        ],
-                      ),
-                    ),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppColors.primary.withValues(alpha: 0.1),
+                      AppColors.background,
+                    ],
                   ),
-                  Center(
+                ),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 60),
                     child: Hero(
                       tag: 'book_${book.id}',
                       child: Container(
-                        width: 160,
-                        height: 240,
+                        width: 150,
+                        height: 220,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                              blurRadius: 30,
+                              offset: const Offset(0, 15),
                             ),
                           ],
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                           child: Image.network(
                             book.coverUrl,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
-                              color: Colors.grey.shade300,
-                              child: const Icon(Icons.book, size: 48),
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              child: const Icon(LucideIcons.bookOpen, size: 48),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -118,154 +122,208 @@ class BookDetailScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Type Badge
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: book.type == BookType.ebook
-                          ? AppColors.primary
-                          : AppColors.secondary,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      book.type == BookType.ebook ? 'E-Book' : 'Physical Book',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
                   // Title
                   Text(
                     book.title,
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   const SizedBox(height: 8),
 
                   // Author
                   Text(
-                    'by ${book.author}',
+                    book.author,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
                         ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-                  // Info Cards
+                  // Badges
                   Row(
                     children: [
-                      if (book.type == BookType.physical) ...[
-                        _buildInfoCard(
-                          context,
-                          icon: LucideIcons.package,
-                          label: 'Stock',
-                          value: book.stock > 0 ? '${book.stock} left' : 'Out',
-                          color:
-                              book.stock > 0 ? AppColors.success : AppColors.error,
-                        ),
-                        const SizedBox(width: 12),
-                        _buildInfoCard(
-                          context,
-                          icon: LucideIcons.mapPin,
-                          label: 'Location',
-                          value: book.shelfLocation ?? '-',
-                          color: AppColors.primary,
-                        ),
-                      ] else ...[
-                        _buildInfoCard(
-                          context,
-                          icon: LucideIcons.smartphone,
-                          label: 'Format',
-                          value: 'PDF',
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 12),
-                        _buildInfoCard(
-                          context,
-                          icon: LucideIcons.infinity,
-                          label: 'Access',
-                          value: 'Unlimited',
-                          color: AppColors.success,
-                        ),
-                      ],
+                      _buildBadge(
+                        label: book.isAvailable ? 'Tersedia' : 'Tidak Tersedia',
+                        color: book.isAvailable ? AppColors.success : AppColors.error,
+                      ),
+                      const SizedBox(width: 8),
+                      _buildBadge(
+                        label: book.type == BookType.ebook ? 'E-Book' : 'Fisik',
+                        color: AppColors.primary,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
 
-                  // Description
+                  // Info Grid
+                  _buildInfoGrid(context, book),
+                  const SizedBox(height: 24),
+
+                  // Synopsis
                   Text(
-                    'About this book',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '
-                    'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. '
-                    'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          height: 1.6,
+                    'Sinopsis',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
                   ),
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: AppShadows.cardShadow,
+                    ),
+                    child: Text(
+                      book.description.isNotEmpty
+                          ? book.description
+                          : 'Deskripsi buku tidak tersedia.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            height: 1.6,
+                            color: AppColors.textSecondary,
+                          ),
+                    ),
+                  ),
+                  const SizedBox(height: 120),
                 ],
               ),
             ),
           ),
         ],
       ),
-      // Bottom Action Button
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: _buildActionButton(context, ref, book, authState, bookingState),
+      bottomNavigationBar: _buildBottomBar(context, ref, book, authState, bookingState),
+    );
+  }
+
+  Widget _buildBadge({required String label, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 
-  Widget _buildInfoCard(
+  Widget _buildInfoGrid(BuildContext context, Book book) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppShadows.cardShadow,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildInfoItem(
+              context,
+              icon: LucideIcons.calendar,
+              label: 'Tahun',
+              value: '2024',
+            ),
+          ),
+          _buildDivider(),
+          Expanded(
+            child: _buildInfoItem(
+              context,
+              icon: LucideIcons.folder,
+              label: 'Kategori',
+              value: book.category,
+            ),
+          ),
+          _buildDivider(),
+          Expanded(
+            child: _buildInfoItem(
+              context,
+              icon: LucideIcons.package,
+              label: book.type == BookType.ebook ? 'Format' : 'Stok',
+              value: book.type == BookType.ebook ? 'Digital' : '${book.stock}',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(
     BuildContext context, {
     required IconData icon,
     required String label,
     required String value,
-    required Color color,
   }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
+    return Column(
+      children: [
+        Icon(icon, color: AppColors.primary, size: 22),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDivider() {
+    return Container(
+      width: 1,
+      height: 50,
+      color: Colors.grey.shade200,
+    );
+  }
+
+  Widget _buildBottomBar(
+    BuildContext context,
+    WidgetRef ref,
+    Book book,
+    AuthState authState,
+    BookingState bookingState,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: AppShadows.bottomBarShadow,
+      ),
+      child: SafeArea(
+        child: Row(
           children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium,
+            // Favorite Button
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                onPressed: () {},
+                icon: const Icon(LucideIcons.heart, color: AppColors.textSecondary),
+              ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: color,
-                  ),
+            const SizedBox(width: 12),
+            // Action Buttons
+            Expanded(
+              child: _buildActionButtons(context, ref, book, authState, bookingState),
             ),
           ],
         ),
@@ -273,7 +331,7 @@ class BookDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButton(
+  Widget _buildActionButtons(
     BuildContext context,
     WidgetRef ref,
     Book book,
@@ -281,44 +339,32 @@ class BookDetailScreen extends ConsumerWidget {
     BookingState bookingState,
   ) {
     if (book.type == BookType.ebook) {
-      // E-Book: Read Now button
       return SizedBox(
-        width: double.infinity,
-        height: 56,
+        height: 52,
         child: ElevatedButton.icon(
           onPressed: () => context.push('/reader/${book.id}'),
           icon: const Icon(LucideIcons.bookOpen),
-          label: const Text('Read Now'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-          ),
+          label: const Text('Baca E-Book'),
         ),
       );
     }
 
-    // Physical Book
     if (book.stock <= 0) {
-      // Out of Stock
       return SizedBox(
-        width: double.infinity,
-        height: 56,
-        child: ElevatedButton.icon(
+        height: 52,
+        child: ElevatedButton(
           onPressed: null,
-          icon: const Icon(LucideIcons.packageX),
-          label: const Text('Out of Stock'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.grey,
+            backgroundColor: Colors.grey.shade300,
             disabledBackgroundColor: Colors.grey.shade300,
-            disabledForegroundColor: Colors.grey.shade600,
           ),
+          child: const Text('Stok Habis'),
         ),
       );
     }
 
-    // Available for Booking
     return SizedBox(
-      width: double.infinity,
-      height: 56,
+      height: 52,
       child: ElevatedButton.icon(
         onPressed: bookingState.isLoading
             ? null
@@ -339,7 +385,7 @@ class BookDetailScreen extends ConsumerWidget {
                 ),
               )
             : const Icon(LucideIcons.calendarCheck),
-        label: Text(bookingState.isLoading ? 'Processing...' : 'Book Now'),
+        label: Text(bookingState.isLoading ? 'Memproses...' : 'Booking Sekarang'),
       ),
     );
   }
