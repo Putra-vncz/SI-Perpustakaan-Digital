@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/auth_provider.dart';
 import '../../features/auth/presentation/login_screen.dart';
+import '../../features/auth/presentation/register_screen.dart';
 import '../../features/student/presentation/presentation.dart';
 import '../../features/admin/presentation/presentation.dart';
 
@@ -15,14 +16,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final isLoggedIn = authState.isLoggedIn;
       final isLoginRoute = state.matchedLocation == '/login';
+      final isRegisterRoute = state.matchedLocation == '/register';
 
-      // Not logged in -> redirect to login
-      if (!isLoggedIn && !isLoginRoute) {
+      // Not logged in -> redirect to login (except register page)
+      if (!isLoggedIn && !isLoginRoute && !isRegisterRoute) {
         return '/login';
       }
 
-      // Logged in and on login page -> redirect based on role
-      if (isLoggedIn && isLoginRoute) {
+      // Logged in and on login/register page -> redirect based on role
+      if (isLoggedIn && (isLoginRoute || isRegisterRoute)) {
         if (authState.isAdmin) {
           return '/admin';
         }
@@ -37,6 +39,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/login',
         name: 'login',
         builder: (context, state) => const LoginScreen(),
+      ),
+
+      // Register Route
+      GoRoute(
+        path: '/register',
+        name: 'register',
+        builder: (context, state) => const RegisterScreen(),
       ),
 
       // Student Shell Route with Bottom Navigation
@@ -99,6 +108,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               final prefillId = state.extra as String?;
               return ScannerScreen(prefillBookingId: prefillId);
             },
+          ),
+          GoRoute(
+            path: 'add-book',
+            name: 'addBook',
+            builder: (context, state) => const AddBookScreen(),
+          ),
+          GoRoute(
+            path: 'stats',
+            name: 'adminStats',
+            builder: (context, state) => const AdminStatsScreen(),
           ),
         ],
       ),

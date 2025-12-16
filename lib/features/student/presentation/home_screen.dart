@@ -98,7 +98,7 @@ class HomeScreen extends ConsumerWidget {
                   SliverToBoxAdapter(
                     child: SectionHeader(
                       title: 'E-Books',
-                      onSeeAll: () {},
+                      onSeeAll: () => context.go('/search'),
                     ),
                   ),
                   SliverToBoxAdapter(
@@ -125,7 +125,7 @@ class HomeScreen extends ConsumerWidget {
                   SliverToBoxAdapter(
                     child: SectionHeader(
                       title: 'Physical Books',
-                      onSeeAll: () {},
+                      onSeeAll: () => context.go('/search'),
                     ),
                   ),
                   SliverToBoxAdapter(

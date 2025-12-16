@@ -24,10 +24,10 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     // Schedule after build completes
-    Future.microtask(() => _loadBookings());
+    Future.microtask(() => _loadData());
   }
 
-  Future<void> _loadBookings() async {
+  Future<void> _loadData() async {
     final user = ref.read(authProvider).user;
     if (user != null) {
       await ref.read(bookingProvider.notifier).loadUserBookings(user.id);
@@ -40,9 +40,59 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
     super.dispose();
   }
 
+  void _showCancelConfirmation(Booking booking) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Batalkan Booking?'),
+        content: const Text(
+          'Apakah Anda yakin ingin membatalkan booking ini? Tindakan ini tidak dapat dibatalkan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tidak'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(bookingProvider.notifier).cancelBooking(booking.id);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            child: const Text('Ya, Batalkan'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bookingState = ref.watch(bookingProvider);
+
+    // Listen for cancel results
+    ref.listen<BookingState>(bookingProvider, (previous, next) {
+      if (next.successMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.successMessage!),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        ref.read(bookingProvider.notifier).clearMessages();
+      }
+      if (next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        ref.read(bookingProvider.notifier).clearMessages();
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -66,7 +116,7 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
         ),
       ),
       body: bookingState.isLoading
-          ? const LoadingWidget(message: 'Loading bookings...')
+          ? const LoadingWidget(message: 'Loading...')
           : TabBarView(
               controller: _tabController,
               children: [
@@ -87,7 +137,7 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
     }
 
     return RefreshIndicator(
-      onRefresh: () async => _loadBookings(),
+      onRefresh: () async => _loadData(),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: bookings.length,
@@ -222,6 +272,20 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
                           fontSize: 11,
                           color: AppColors.textSecondary,
                         ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Cancel Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showCancelConfirmation(booking),
+                      icon: const Icon(LucideIcons.x, size: 18),
+                      label: const Text('Batalkan Booking'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                        side: const BorderSide(color: AppColors.error),
+                      ),
+                    ),
                   ),
                 ],
               ),

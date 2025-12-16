@@ -34,13 +34,14 @@ class AuthNotifier extends Notifier<AuthState> {
   @override
   AuthState build() => const AuthState();
 
-  MockDataService get _mockService => ref.read(mockDataServiceProvider);
+  HiveDataService get _mockService => ref.read(mockDataServiceProvider);
 
-  Future<bool> login(String identifier) async {
+  /// Login as student with NIM and password
+  Future<bool> loginStudent(String nim, String password) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final user = await _mockService.login(identifier);
+      final user = await _mockService.loginStudent(nim, password);
 
       if (user != null) {
         state = state.copyWith(user: user, isLoading: false);
@@ -48,14 +49,78 @@ class AuthNotifier extends Notifier<AuthState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          error: 'User not found. Use a valid NIM or email.',
+          error: 'NIM atau password salah.',
         );
         return false;
       }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'An error occurred: $e',
+        error: 'Terjadi kesalahan: $e',
+      );
+      return false;
+    }
+  }
+
+  /// Login as admin with email and password
+  Future<bool> loginAdmin(String email, String password) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final user = await _mockService.loginAdmin(email, password);
+
+      if (user != null) {
+        state = state.copyWith(user: user, isLoading: false);
+        return true;
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Email atau password salah.',
+        );
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Terjadi kesalahan: $e',
+      );
+      return false;
+    }
+  }
+
+  /// Register new user
+  Future<bool> register({
+    required String name,
+    required String email,
+    required String password,
+    required UserRole role,
+    String? studentId,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final user = await _mockService.registerUser(
+        name: name,
+        email: email,
+        password: password,
+        role: role,
+        studentId: studentId,
+      );
+
+      if (user != null) {
+        state = state.copyWith(user: user, isLoading: false);
+        return true;
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Email atau NIM sudah terdaftar.',
+        );
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Terjadi kesalahan: $e',
       );
       return false;
     }
@@ -71,8 +136,8 @@ class AuthNotifier extends Notifier<AuthState> {
 }
 
 // Providers
-final mockDataServiceProvider = Provider<MockDataService>((ref) {
-  return MockDataService();
+final mockDataServiceProvider = Provider<HiveDataService>((ref) {
+  return HiveDataService.instance;
 });
 
 final authProvider =

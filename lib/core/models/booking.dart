@@ -1,12 +1,27 @@
 import 'dart:convert';
+import 'package:hive/hive.dart';
 import '../enums/enums.dart';
 
+part 'booking.g.dart';
+
+@HiveType(typeId: 2)
 class Booking {
+  @HiveField(0)
   final String id;
+
+  @HiveField(1)
   final String userId;
+
+  @HiveField(2)
   final String bookId;
+
+  @HiveField(3)
   final DateTime bookingDate;
+
+  @HiveField(4)
   final DateTime expiryDate;
+
+  @HiveField(5)
   final BookingStatus status;
 
   const Booking({

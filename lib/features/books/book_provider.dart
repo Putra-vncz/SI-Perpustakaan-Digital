@@ -51,7 +51,7 @@ class BookListNotifier extends Notifier<BookListState> {
     return const BookListState(isLoading: true);
   }
 
-  MockDataService get _mockService => ref.read(mockDataServiceProvider);
+  HiveDataService get _mockService => ref.read(mockDataServiceProvider);
 
   Future<void> _loadBooks() async {
     state = state.copyWith(isLoading: true, error: null);
@@ -108,6 +108,18 @@ class BookListNotifier extends Notifier<BookListState> {
       return state.books.firstWhere((b) => b.id == id);
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Add new book (Admin action)
+  Future<bool> addBook(Book newBook) async {
+    try {
+      await _mockService.addBook(newBook);
+      state = state.copyWith(books: [...state.books, newBook]);
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: 'Failed to add book: $e');
+      return false;
     }
   }
 }

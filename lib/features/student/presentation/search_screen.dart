@@ -33,10 +33,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Search'),
-        leading: IconButton(
-          icon: const Icon(LucideIcons.arrowLeft),
-          onPressed: () => context.pop(),
-        ),
+        automaticallyImplyLeading: false,
       ),
       body: Column(
         children: [

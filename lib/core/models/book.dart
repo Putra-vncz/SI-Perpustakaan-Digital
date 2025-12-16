@@ -1,13 +1,32 @@
+import 'package:hive/hive.dart';
 import '../enums/enums.dart';
 
+part 'book.g.dart';
+
+@HiveType(typeId: 1)
 class Book {
+  @HiveField(0)
   final String id;
+
+  @HiveField(1)
   final String title;
+
+  @HiveField(2)
   final String author;
+
+  @HiveField(3)
   final String coverUrl;
+
+  @HiveField(4)
   final BookType type;
+
+  @HiveField(5)
   final int stock;
+
+  @HiveField(6)
   final String? pdfUrl;
+
+  @HiveField(7)
   final String? shelfLocation;
 
   const Book({

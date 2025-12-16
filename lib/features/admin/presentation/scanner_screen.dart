@@ -147,9 +147,10 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1A2E),
         foregroundColor: Colors.white,
+        toolbarHeight: 56,
         title: const Text('Scan & Validate'),
         leading: IconButton(
-          icon: const Icon(LucideIcons.arrowLeft),
+          icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
           onPressed: () => context.pop(),
         ),
       ),

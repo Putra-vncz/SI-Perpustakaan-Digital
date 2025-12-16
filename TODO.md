@@ -1,32 +1,7 @@
 # Future Features - University E-Library
 
-## 🔜 Planned Features
-
-### 1. Admin: Add/Manage Books
-**Status:** Pending (waiting for server/database decision)
-
-**Description:**
-- Admin dapat menambah buku baru via aplikasi
-- Form input: title, author, type (physical/ebook), stock, cover, dll
-- Untuk buku fisik: input lokasi rak, jumlah stok
-- Untuk ebook: upload file PDF atau input URL
-
-**Considerations:**
-- Mekanisme berbeda untuk buku fisik (offline) vs ebook (online)
-- Perlu backend/server untuk:
-  - Menyimpan data buku secara persistent
-  - Upload & hosting file PDF untuk ebook
-  - Sinkronisasi data antar device
-
-**Migration Plan:**
-1. Ganti MockDataService → API Service (REST/GraphQL)
-2. Setup backend (Firebase/Supabase/Custom server)
-3. Implementasi file upload untuk ebook PDF
-4. Admin tetap menambah buku via aplikasi Flutter
-
----
-
 ## ✅ Completed Features
+
 - [x] Student: Browse & search books
 - [x] Student: Book physical books (Click & Collect)
 - [x] Student: Read ebooks
@@ -34,4 +9,36 @@
 - [x] Admin: Dashboard statistics
 - [x] Admin: Scan QR & validate booking
 - [x] Admin: Process book handover
+- [x] Admin: Add new books
+- [x] Admin: View loan statistics
 - [x] Role-based authentication
+- [x] **Local Database (Hive)** - Data persists across app restarts and browser refreshes
+
+## 🔜 Planned Features
+
+### 1. Backend Integration (Optional)
+
+**Status:** Not started
+
+**Description:**
+- Migrate from Hive (local) to REST API / Firebase / Supabase
+- Enable multi-device sync
+- Cloud storage for ebook PDFs
+
+### 2. Notifications
+
+**Status:** Not started
+
+**Description:**
+- Push notifications for due date reminders
+- Booking expiry warnings
+- New book arrivals
+
+### 3. Book Return Feature
+
+**Status:** Not started
+
+**Description:**
+- Admin can process book returns
+- Auto-restore stock after return
+- Calculate late fees (if any)

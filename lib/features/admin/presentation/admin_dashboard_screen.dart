@@ -219,14 +219,34 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/admin/scan'),
-        backgroundColor: AppColors.secondary,
-        icon: const Icon(LucideIcons.scanLine, color: Colors.white),
-        label: const Text(
-          'Scan QR',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'stats',
+            onPressed: () => context.push('/admin/stats'),
+            backgroundColor: AppColors.success,
+            child: const Icon(LucideIcons.barChart2, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'addBook',
+            onPressed: () => context.push('/admin/add-book'),
+            backgroundColor: AppColors.primary,
+            child: const Icon(LucideIcons.plus, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            heroTag: 'scanQR',
+            onPressed: () => context.push('/admin/scan'),
+            backgroundColor: AppColors.secondary,
+            icon: const Icon(LucideIcons.scanLine, color: Colors.white),
+            label: const Text(
+              'Scan QR',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
       ),
     );
   }

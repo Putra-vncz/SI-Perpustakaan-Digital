@@ -2,12 +2,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/core.dart';
 import '../auth/auth_provider.dart';
 
+enum LoanFilter { all, active, returned, overdue }
+
 class LoanState {
   final List<Loan> loans;
   final List<Booking> allActiveBookings; // For admin view
   final bool isLoading;
   final String? error;
   final String? successMessage;
+  final LoanFilter filter;
 
   const LoanState({
     this.loans = const [],
@@ -15,13 +18,30 @@ class LoanState {
     this.isLoading = false,
     this.error,
     this.successMessage,
+    this.filter = LoanFilter.all,
   });
 
   List<Loan> get activeLoans =>
-      loans.where((l) => l.status == LoanStatus.active).toList();
+      loans.where((l) => l.status == LoanStatus.active && !l.isOverdue).toList();
 
   List<Loan> get returnedLoans =>
       loans.where((l) => l.status == LoanStatus.returned).toList();
+
+  List<Loan> get overdueLoans =>
+      loans.where((l) => l.status == LoanStatus.active && l.isOverdue).toList();
+
+  List<Loan> get filteredLoans {
+    switch (filter) {
+      case LoanFilter.active:
+        return activeLoans;
+      case LoanFilter.returned:
+        return returnedLoans;
+      case LoanFilter.overdue:
+        return overdueLoans;
+      case LoanFilter.all:
+        return loans;
+    }
+  }
 
   LoanState copyWith({
     List<Loan>? loans,
@@ -29,6 +49,7 @@ class LoanState {
     bool? isLoading,
     String? error,
     String? successMessage,
+    LoanFilter? filter,
     bool clearMessages = false,
   }) {
     return LoanState(
@@ -37,6 +58,7 @@ class LoanState {
       isLoading: isLoading ?? this.isLoading,
       error: clearMessages ? null : error,
       successMessage: clearMessages ? null : successMessage,
+      filter: filter ?? this.filter,
     );
   }
 }
@@ -45,7 +67,7 @@ class LoanNotifier extends Notifier<LoanState> {
   @override
   LoanState build() => const LoanState();
 
-  MockDataService get _mockService => ref.read(mockDataServiceProvider);
+  HiveDataService get _mockService => ref.read(mockDataServiceProvider);
 
   /// Load all active bookings (Admin)
   Future<void> loadActiveBookings() async {
@@ -58,6 +80,21 @@ class LoanNotifier extends Notifier<LoanState> {
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to load bookings: $e',
+      );
+    }
+  }
+
+  /// Load all loans (Admin)
+  Future<void> loadAllLoans() async {
+    state = state.copyWith(isLoading: true, clearMessages: true);
+
+    try {
+      final loans = await _mockService.getAllLoans();
+      state = state.copyWith(loans: loans, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Failed to load loans: $e',
       );
     }
   }
@@ -75,6 +112,11 @@ class LoanNotifier extends Notifier<LoanState> {
         error: 'Failed to load loans: $e',
       );
     }
+  }
+
+  /// Set filter
+  void setFilter(LoanFilter filter) {
+    state = state.copyWith(filter: filter);
   }
 
   /// Claim booking and create loan (Admin action)

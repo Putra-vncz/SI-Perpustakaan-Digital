@@ -49,7 +49,7 @@ class BookingNotifier extends Notifier<BookingState> {
   @override
   BookingState build() => const BookingState();
 
-  MockDataService get _mockService => ref.read(mockDataServiceProvider);
+  HiveDataService get _mockService => ref.read(mockDataServiceProvider);
 
   /// Load user's bookings
   Future<void> loadUserBookings(String userId) async {
@@ -158,6 +158,65 @@ class BookingNotifier extends Notifier<BookingState> {
       return state.bookings.firstWhere((b) => b.id == id);
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Cancel booking
+  Future<bool> cancelBooking(String bookingId) async {
+    state = state.copyWith(isLoading: true, clearMessages: true);
+
+    try {
+      final booking = getBookingById(bookingId);
+      if (booking == null) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Booking not found.',
+        );
+        return false;
+      }
+
+      if (booking.status != BookingStatus.active) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Only active bookings can be cancelled.',
+        );
+        return false;
+      }
+
+      final success = await _mockService.cancelBooking(bookingId);
+
+      if (!success) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Failed to cancel booking.',
+        );
+        return false;
+      }
+
+      // Update local state
+      final updatedBookings = state.bookings.map((b) {
+        if (b.id == bookingId) {
+          return b.copyWith(status: BookingStatus.cancelled);
+        }
+        return b;
+      }).toList();
+
+      state = state.copyWith(
+        bookings: updatedBookings,
+        isLoading: false,
+        successMessage: 'Booking cancelled successfully.',
+      );
+
+      // Restore book stock
+      ref.read(bookListProvider.notifier).incrementStock(booking.bookId);
+
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'An error occurred: $e',
+      );
+      return false;
     }
   }
 
