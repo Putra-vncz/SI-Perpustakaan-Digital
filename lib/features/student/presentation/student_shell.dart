@@ -1,17 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/core.dart';
+import '../../auth/auth_provider.dart';
+import '../../favorite/favorite_provider.dart';
 
-class StudentShell extends StatelessWidget {
+class StudentShell extends ConsumerStatefulWidget {
   final Widget child;
 
   const StudentShell({super.key, required this.child});
 
   @override
+  ConsumerState<StudentShell> createState() => _StudentShellState();
+}
+
+class _StudentShellState extends ConsumerState<StudentShell> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => _loadFavorites());
+  }
+
+  Future<void> _loadFavorites() async {
+    final user = ref.read(authProvider).user;
+    if (user != null) {
+      await ref.read(favoriteProvider.notifier).loadFavorites(user.id);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: child,
+      body: widget.child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: AppColors.surface,

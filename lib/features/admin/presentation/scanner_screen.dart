@@ -24,7 +24,8 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
     super.initState();
     if (widget.prefillBookingId != null) {
       _bookingIdController.text = widget.prefillBookingId!;
-      _validateBooking();
+      // Delay validation to avoid modifying provider during build
+      Future.microtask(() => _validateBooking());
     }
   }
 
@@ -46,19 +47,30 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
       _validatedData = null;
     });
 
-    // Create QR data format
-    final qrData = '{"bookingId": "$bookingId", "userId": "user_1"}';
-    final result =
-        await ref.read(loanProvider.notifier).validateBookingFromQR(qrData);
+    try {
+      // Create QR data format - userId will be fetched from booking
+      final qrData = '{"bookingId": "$bookingId"}';
+      final result =
+          await ref.read(loanProvider.notifier).validateBookingFromQR(qrData);
 
-    setState(() {
-      _isValidating = false;
-      _validatedData = result;
-    });
+      if (mounted) {
+        setState(() {
+          _isValidating = false;
+          _validatedData = result;
+        });
 
-    if (result == null) {
-      final error = ref.read(loanProvider).error;
-      _showError(error ?? 'Booking not found');
+        if (result == null) {
+          final error = ref.read(loanProvider).error;
+          _showError(error ?? 'Booking not found');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isValidating = false;
+        });
+        _showError('Error: $e');
+      }
     }
   }
 

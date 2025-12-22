@@ -229,9 +229,8 @@ class LoanNotifier extends Notifier<LoanState> {
       // Parse QR data (format: {"bookingId": "xxx", "userId": "xxx"})
       final Map<String, dynamic> data = _parseQRData(qrData);
       final bookingId = data['bookingId'] as String?;
-      final userId = data['userId'] as String?;
 
-      if (bookingId == null || userId == null) {
+      if (bookingId == null) {
         state = state.copyWith(
           isLoading: false,
           error: 'Invalid QR Code.',
@@ -249,8 +248,8 @@ class LoanNotifier extends Notifier<LoanState> {
         return null;
       }
 
-      // Get user details
-      final user = await _mockService.getUserById(userId);
+      // Get user details using booking's userId
+      final user = await _mockService.getUserById(booking.userId);
 
       // Get book details
       final book = await _mockService.getBookById(booking.bookId);

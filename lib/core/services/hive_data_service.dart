@@ -20,12 +20,14 @@ class HiveDataService {
   static const String _bookBoxName = 'books';
   static const String _bookingBoxName = 'bookings';
   static const String _loanBoxName = 'loans';
+  static const String _favoriteBoxName = 'favorites';
 
   // Boxes
   late Box<User> _userBox;
   late Box<Book> _bookBox;
   late Box<Booking> _bookingBox;
   late Box<Loan> _loanBox;
+  late Box _favoriteBox;
 
   bool _isInitialized = false;
 
@@ -45,17 +47,20 @@ class HiveDataService {
       _bookBox = await Hive.openBox<Book>(_bookBoxName);
       _bookingBox = await Hive.openBox<Booking>(_bookingBoxName);
       _loanBox = await Hive.openBox<Loan>(_loanBoxName);
+      _favoriteBox = await Hive.openBox(_favoriteBoxName);
     } catch (e) {
       // If there's an error (e.g., schema change), clear all data and retry
       await Hive.deleteBoxFromDisk(_userBoxName);
       await Hive.deleteBoxFromDisk(_bookBoxName);
       await Hive.deleteBoxFromDisk(_bookingBoxName);
       await Hive.deleteBoxFromDisk(_loanBoxName);
+      await Hive.deleteBoxFromDisk(_favoriteBoxName);
 
       _userBox = await Hive.openBox<User>(_userBoxName);
       _bookBox = await Hive.openBox<Book>(_bookBoxName);
       _bookingBox = await Hive.openBox<Booking>(_bookingBoxName);
       _loanBox = await Hive.openBox<Loan>(_loanBoxName);
+      _favoriteBox = await Hive.openBox(_favoriteBoxName);
     }
 
     // Seed data if first launch
@@ -502,5 +507,39 @@ class HiveDataService {
   Future<bool> hasActiveFines(String userId) async {
     await Future.delayed(const Duration(milliseconds: 100));
     return false; // Mock - always false
+  }
+
+
+  // ============ FAVORITES ============
+  Future<List<String>> getUserFavorites(String userId) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final dynamic data = _favoriteBox.get(userId);
+    if (data == null) return [];
+    if (data is List) {
+      return data.map((e) => e.toString()).toList();
+    }
+    return [];
+  }
+
+  Future<void> addFavorite(String userId, String bookId) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final favorites = await getUserFavorites(userId);
+    if (!favorites.contains(bookId)) {
+      favorites.add(bookId);
+      await _favoriteBox.put(userId, favorites);
+    }
+  }
+
+  Future<void> removeFavorite(String userId, String bookId) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final favorites = await getUserFavorites(userId);
+    favorites.remove(bookId);
+    await _favoriteBox.put(userId, favorites);
+  }
+
+  Future<List<Book>> getFavoriteBooks(String userId) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final favoriteIds = await getUserFavorites(userId);
+    return _bookBox.values.where((b) => favoriteIds.contains(b.id)).toList();
   }
 }

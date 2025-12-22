@@ -23,7 +23,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   }
 
   Future<void> _loadData() async {
-    await ref.read(loanProvider.notifier).loadActiveBookings();
+    await Future.wait([
+      ref.read(loanProvider.notifier).loadActiveBookings(),
+      ref.read(loanProvider.notifier).loadAllLoans(),
+    ]);
   }
 
   @override

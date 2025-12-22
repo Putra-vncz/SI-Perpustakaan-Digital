@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/core.dart';
@@ -7,6 +8,7 @@ import '../../../shared/widgets/widgets.dart';
 import '../../auth/auth_provider.dart';
 import '../../books/book_provider.dart';
 import '../../booking/booking_provider.dart';
+import '../../favorite/favorite_provider.dart';
 
 class MyShelfScreen extends ConsumerStatefulWidget {
   const MyShelfScreen({super.key});
@@ -22,7 +24,7 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     // Schedule after build completes
     Future.microtask(() => _loadData());
   }
@@ -31,6 +33,7 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
     final user = ref.read(authProvider).user;
     if (user != null) {
       await ref.read(bookingProvider.notifier).loadUserBookings(user.id);
+      await ref.read(favoriteProvider.notifier).loadFavorites(user.id);
     }
   }
 
@@ -71,6 +74,7 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
   @override
   Widget build(BuildContext context) {
     final bookingState = ref.watch(bookingProvider);
+    final favoriteState = ref.watch(favoriteProvider);
 
     // Listen for cancel results
     ref.listen<BookingState>(bookingProvider, (previous, next) {
@@ -105,6 +109,10 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
           indicatorColor: AppColors.primary,
           tabs: [
             Tab(
+              icon: const Icon(LucideIcons.heart),
+              text: 'Favorites (${favoriteState.favoriteBookIds.length})',
+            ),
+            Tab(
               icon: const Icon(LucideIcons.calendarClock),
               text: 'Active (${bookingState.activeBookings.length})',
             ),
@@ -115,11 +123,12 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
           ],
         ),
       ),
-      body: bookingState.isLoading
+      body: bookingState.isLoading || favoriteState.isLoading
           ? const LoadingWidget(message: 'Loading...')
           : TabBarView(
               controller: _tabController,
               children: [
+                _buildFavorites(favoriteState.favoriteBookIds),
                 _buildActiveBookings(bookingState.activeBookings),
                 _buildHistoryBookings(bookingState.historyBookings),
               ],
@@ -402,5 +411,131 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
       return '${duration.inHours}h ${duration.inMinutes % 60}m left';
     }
     return '${duration.inMinutes}m left';
+  }
+
+  Widget _buildFavorites(List<String> favoriteBookIds) {
+    if (favoriteBookIds.isEmpty) {
+      return _buildEmptyState(
+        icon: LucideIcons.heart,
+        title: 'No Favorites',
+        subtitle: 'Tap the heart icon on books to add them here!',
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async => _loadData(),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: favoriteBookIds.length,
+        itemBuilder: (context, index) {
+          final bookId = favoriteBookIds[index];
+          return _buildFavoriteCard(bookId);
+        },
+      ),
+    );
+  }
+
+  Widget _buildFavoriteCard(String bookId) {
+    final book = ref.watch(bookByIdProvider(bookId));
+    final user = ref.watch(authProvider).user;
+
+    if (book == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () => context.push('/book/$bookId'),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Book Cover
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  book.coverUrl,
+                  width: 60,
+                  height: 90,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 60,
+                    height: 90,
+                    color: Colors.grey.shade200,
+                    child: const Icon(Icons.book),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Book Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      book.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      book.author,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: book.type == BookType.ebook
+                                ? AppColors.primary.withValues(alpha: 0.1)
+                                : AppColors.success.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            book.type == BookType.ebook ? 'E-Book' : 'Fisik',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: book.type == BookType.ebook
+                                  ? AppColors.primary
+                                  : AppColors.success,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Remove Favorite Button
+              IconButton(
+                onPressed: () {
+                  if (user != null) {
+                    ref.read(favoriteProvider.notifier).toggleFavorite(
+                          user.id,
+                          bookId,
+                        );
+                  }
+                },
+                icon: const Icon(
+                  LucideIcons.heartOff,
+                  color: AppColors.error,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

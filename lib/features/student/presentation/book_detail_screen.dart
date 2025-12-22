@@ -6,6 +6,7 @@ import '../../../core/core.dart';
 import '../../auth/auth_provider.dart';
 import '../../books/book_provider.dart';
 import '../../booking/booking_provider.dart';
+import '../../favorite/favorite_provider.dart';
 
 class BookDetailScreen extends ConsumerWidget {
   final String bookId;
@@ -298,6 +299,9 @@ class BookDetailScreen extends ConsumerWidget {
     AuthState authState,
     BookingState bookingState,
   ) {
+    final favoriteState = ref.watch(favoriteProvider);
+    final isFavorite = favoriteState.isFavorite(book.id);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -312,12 +316,24 @@ class BookDetailScreen extends ConsumerWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(
+                  color: isFavorite ? AppColors.error : Colors.grey.shade300,
+                ),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: IconButton(
-                onPressed: () {},
-                icon: const Icon(LucideIcons.heart, color: AppColors.textSecondary),
+                onPressed: () {
+                  if (authState.user != null) {
+                    ref.read(favoriteProvider.notifier).toggleFavorite(
+                          authState.user!.id,
+                          book.id,
+                        );
+                  }
+                },
+                icon: Icon(
+                  isFavorite ? LucideIcons.heartOff : LucideIcons.heart,
+                  color: isFavorite ? AppColors.error : AppColors.textSecondary,
+                ),
               ),
             ),
             const SizedBox(width: 12),

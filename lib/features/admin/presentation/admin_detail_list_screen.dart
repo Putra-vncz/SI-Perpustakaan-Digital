@@ -274,6 +274,7 @@ class _AdminDetailListScreenState extends ConsumerState<AdminDetailListScreen> {
   }
 
   Widget _buildLoanCard(Loan loan, {bool isOverdue = false}) {
+    final book = ref.watch(bookByIdProvider(loan.bookId));
     final daysOverdue = DateTime.now().difference(loan.dueDate).inDays;
 
     return Container(
@@ -290,6 +291,23 @@ class _AdminDetailListScreenState extends ConsumerState<AdminDetailListScreen> {
         children: [
           Row(
             children: [
+              // Book Cover
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  book?.coverUrl ?? '',
+                  width: 50,
+                  height: 70,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 50,
+                    height: 70,
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    child: const Icon(LucideIcons.bookOpen, size: 20),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,7 +377,7 @@ class _AdminDetailListScreenState extends ConsumerState<AdminDetailListScreen> {
   }
 
   Widget _buildBookingCard(Booking booking) {
-    final book = ref.read(bookByIdProvider(booking.bookId));
+    final book = ref.watch(bookByIdProvider(booking.bookId));
     final hoursLeft = booking.expiryDate.difference(DateTime.now()).inHours;
 
     return Container(
@@ -375,6 +393,23 @@ class _AdminDetailListScreenState extends ConsumerState<AdminDetailListScreen> {
         children: [
           Row(
             children: [
+              // Book Cover
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  book?.coverUrl ?? '',
+                  width: 50,
+                  height: 70,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 50,
+                    height: 70,
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    child: const Icon(LucideIcons.bookOpen, size: 20),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
