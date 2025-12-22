@@ -95,6 +95,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      // Notification Route
+      GoRoute(
+        path: '/notifications',
+        name: 'notifications',
+        builder: (context, state) => const NotificationScreen(),
+      ),
+
       // Admin Routes
       GoRoute(
         path: '/admin',
@@ -118,6 +125,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'stats',
             name: 'adminStats',
             builder: (context, state) => const AdminStatsScreen(),
+          ),
+          GoRoute(
+            path: 'list/:type',
+            name: 'adminList',
+            builder: (context, state) {
+              final typeStr = state.pathParameters['type']!;
+              final type = AdminListType.values.firstWhere(
+                (e) => e.name == typeStr,
+                orElse: () => AdminListType.allBooks,
+              );
+              return AdminDetailListScreen(listType: type);
+            },
           ),
         ],
       ),

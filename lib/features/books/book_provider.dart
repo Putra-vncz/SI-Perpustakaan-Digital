@@ -58,6 +58,9 @@ class BookListNotifier extends Notifier<BookListState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
+      // Clear ebook cache to ensure fresh data with updated cover URLs
+      _ebookService.clearCache();
+      
       // Load physical books from Hive
       final physicalBooks = await _mockService.getAllBooks();
 
@@ -76,6 +79,8 @@ class BookListNotifier extends Notifier<BookListState> {
   }
 
   Future<void> refresh() async {
+    // Clear ebook cache to get fresh data
+    _ebookService.clearCache();
     await _loadBooks();
   }
 

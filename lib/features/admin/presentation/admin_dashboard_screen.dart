@@ -168,6 +168,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 value: '${bookState.books.length}',
                 color: AppColors.primary,
                 isPrimary: true,
+                onTap: () => context.push('/admin/list/allBooks'),
               ),
             ),
             const SizedBox(width: 12),
@@ -177,6 +178,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 label: 'Sedang Dipinjam',
                 value: '${loanState.activeLoans.length}',
                 color: AppColors.warning,
+                onTap: () => context.push('/admin/list/activeLoans'),
               ),
             ),
           ],
@@ -190,6 +192,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 label: 'Pending Pickup',
                 value: '${loanState.allActiveBookings.length}',
                 color: AppColors.info,
+                onTap: () => context.push('/admin/list/pendingPickup'),
               ),
             ),
             const SizedBox(width: 12),
@@ -199,6 +202,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 label: 'Terlambat',
                 value: '${loanState.overdueLoans.length}',
                 color: AppColors.error,
+                onTap: () => context.push('/admin/list/overdue'),
               ),
             ),
           ],
@@ -213,52 +217,70 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     required String value,
     required Color color,
     bool isPrimary = false,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: isPrimary ? AppColors.primaryGradient : null,
-        color: isPrimary ? null : AppColors.surface,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: AppShadows.cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isPrimary
-                  ? Colors.white.withValues(alpha: 0.2)
-                  : color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              icon,
-              color: isPrimary ? Colors.white : color,
-              size: 22,
-            ),
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: isPrimary ? AppColors.primaryGradient : null,
+            color: isPrimary ? null : AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: AppShadows.cardShadow,
           ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: isPrimary ? Colors.white : AppColors.textPrimary,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: isPrimary
+                          ? Colors.white.withValues(alpha: 0.2)
+                          : color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: isPrimary ? Colors.white : color,
+                      size: 22,
+                    ),
+                  ),
+                  Icon(
+                    LucideIcons.chevronRight,
+                    color: isPrimary ? Colors.white.withValues(alpha: 0.7) : AppColors.textLight,
+                    size: 18,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: isPrimary ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isPrimary
+                      ? Colors.white.withValues(alpha: 0.8)
+                      : AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: isPrimary
-                  ? Colors.white.withValues(alpha: 0.8)
-                  : AppColors.textSecondary,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

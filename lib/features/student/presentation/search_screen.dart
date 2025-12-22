@@ -224,12 +224,44 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     child: Image.network(
                       book.coverUrl,
                       fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          child: const Center(
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                       errorBuilder: (_, __, ___) => Container(
                         color: AppColors.primary.withValues(alpha: 0.1),
-                        child: const Icon(
-                          LucideIcons.bookOpen,
-                          size: 24,
-                          color: AppColors.primary,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              LucideIcons.bookOpen,
+                              size: 20,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              book.title.length > 10
+                                  ? '${book.title.substring(0, 10)}...'
+                                  : book.title,
+                              style: const TextStyle(
+                                fontSize: 8,
+                                color: AppColors.primary,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       ),
                     ),

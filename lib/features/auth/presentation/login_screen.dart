@@ -122,7 +122,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         const SizedBox(height: 24),
         Text(
-          'FMIPA Library',
+          'FST Library',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.bold,
@@ -130,7 +130,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Sistem Informasi Perpustakaan Digital\nFakultas Matematika dan Ilmu Pengetahuan Alam',
+          'Sistem Informasi Perpustakaan Digital\nFakultas Sains dan Teknologi',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.textSecondary,
               ),

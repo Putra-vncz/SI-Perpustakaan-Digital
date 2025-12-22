@@ -6,6 +6,7 @@ import '../../../core/core.dart';
 import '../../../shared/widgets/widgets.dart';
 import '../../auth/auth_provider.dart';
 import '../../books/book_provider.dart';
+import '../../notification/notification_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -33,7 +34,7 @@ class HomeScreen extends ConsumerWidget {
             ),
             const SizedBox(width: 12),
             Text(
-              'FMIPA Library',
+              'FST Library',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
@@ -43,21 +44,36 @@ class HomeScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () => context.push('/notifications'),
             icon: Stack(
               children: [
                 const Icon(LucideIcons.bell, color: AppColors.textSecondary),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.error,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final unreadCount = ref.watch(unreadNotificationCountProvider);
+                    if (unreadCount == 0) return const SizedBox.shrink();
+                    return Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                        decoration: const BoxDecoration(
+                          color: AppColors.error,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          unreadCount > 9 ? '9+' : '$unreadCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -306,12 +322,43 @@ class HomeScreen extends ConsumerWidget {
                       book.coverUrl,
                       fit: BoxFit.cover,
                       width: double.infinity,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        );
+                      },
                       errorBuilder: (_, __, ___) => Container(
                         color: AppColors.primary.withValues(alpha: 0.1),
-                        child: const Icon(
-                          LucideIcons.bookOpen,
-                          size: 40,
-                          color: AppColors.primary,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              LucideIcons.bookOpen,
+                              size: 32,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Text(
+                                book.title,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.primary,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -407,11 +454,29 @@ class HomeScreen extends ConsumerWidget {
                 width: 50,
                 height: 70,
                 fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    width: 50,
+                    height: 70,
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  );
+                },
                 errorBuilder: (_, __, ___) => Container(
                   width: 50,
                   height: 70,
                   color: AppColors.primary.withValues(alpha: 0.1),
-                  child: const Icon(LucideIcons.bookOpen, size: 20),
+                  child: const Icon(LucideIcons.bookOpen, size: 20, color: AppColors.primary),
                 ),
               ),
             ),
