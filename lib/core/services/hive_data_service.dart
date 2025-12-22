@@ -15,12 +15,16 @@ class HiveDataService {
 
   static HiveDataService get instance => _instance;
 
+  // Data version - increment this to force update book covers
+  static const int _dataVersion = 2;
+
   // Box names
   static const String _userBoxName = 'users';
   static const String _bookBoxName = 'books';
   static const String _bookingBoxName = 'bookings';
   static const String _loanBoxName = 'loans';
   static const String _favoriteBoxName = 'favorites';
+  static const String _settingsBoxName = 'settings';
 
   // Boxes
   late Box<User> _userBox;
@@ -28,6 +32,7 @@ class HiveDataService {
   late Box<Booking> _bookingBox;
   late Box<Loan> _loanBox;
   late Box _favoriteBox;
+  late Box _settingsBox;
 
   bool _isInitialized = false;
 
@@ -48,6 +53,7 @@ class HiveDataService {
       _bookingBox = await Hive.openBox<Booking>(_bookingBoxName);
       _loanBox = await Hive.openBox<Loan>(_loanBoxName);
       _favoriteBox = await Hive.openBox(_favoriteBoxName);
+      _settingsBox = await Hive.openBox(_settingsBoxName);
     } catch (e) {
       // If there's an error (e.g., schema change), clear all data and retry
       await Hive.deleteBoxFromDisk(_userBoxName);
@@ -55,12 +61,14 @@ class HiveDataService {
       await Hive.deleteBoxFromDisk(_bookingBoxName);
       await Hive.deleteBoxFromDisk(_loanBoxName);
       await Hive.deleteBoxFromDisk(_favoriteBoxName);
+      await Hive.deleteBoxFromDisk(_settingsBoxName);
 
       _userBox = await Hive.openBox<User>(_userBoxName);
       _bookBox = await Hive.openBox<Book>(_bookBoxName);
       _bookingBox = await Hive.openBox<Booking>(_bookingBoxName);
       _loanBox = await Hive.openBox<Loan>(_loanBoxName);
       _favoriteBox = await Hive.openBox(_favoriteBoxName);
+      _settingsBox = await Hive.openBox(_settingsBoxName);
     }
 
     // Seed data if first launch
@@ -102,6 +110,10 @@ class HiveDataService {
 
   /// Seed default admin account and sample books
   Future<void> _seedDataIfNeeded() async {
+    // Check data version and update if needed
+    final storedVersion = _settingsBox.get('dataVersion', defaultValue: 0) as int;
+    final needsUpdate = storedVersion < _dataVersion;
+
     // Seed admin if no admin exists
     final hasAdminAccount =
         _userBox.values.any((u) => u.role == UserRole.admin);
@@ -117,125 +129,146 @@ class HiveDataService {
       await _userBox.put(admin.id, admin);
     }
 
-    // Seed physical books if no books exist
-    if (_bookBox.isEmpty) {
-      final physicalBooks = [
-        Book(
-          id: 'book_001',
-          title: 'Algoritma dan Pemrograman',
-          author: 'Rinaldi Munir',
-          description:
-              'Buku ini membahas dasar-dasar algoritma dan pemrograman menggunakan bahasa Pascal dan C. Cocok untuk mahasiswa tingkat awal.',
-          coverUrl: 'https://picsum.photos/seed/algo/200/300',
-          type: BookType.physical,
-          stock: 5,
-          category: 'Komputer',
-        ),
-        Book(
-          id: 'book_002',
-          title: 'Struktur Data dan Algoritma',
-          author: 'Thomas H. Cormen',
-          description:
-              'Introduction to Algorithms edisi Indonesia. Membahas struktur data dan algoritma secara komprehensif.',
-          coverUrl: 'https://picsum.photos/seed/struktur/200/300',
-          type: BookType.physical,
-          stock: 3,
-          category: 'Komputer',
-        ),
-        Book(
-          id: 'book_003',
-          title: 'Basis Data',
-          author: 'Fathansyah',
-          description:
-              'Buku panduan lengkap tentang konsep basis data relasional, SQL, dan normalisasi database.',
-          coverUrl: 'https://picsum.photos/seed/database/200/300',
-          type: BookType.physical,
-          stock: 4,
-          category: 'Komputer',
-        ),
-        Book(
-          id: 'book_004',
-          title: 'Jaringan Komputer',
-          author: 'Andrew S. Tanenbaum',
-          description:
-              'Buku klasik tentang jaringan komputer yang membahas dari layer fisik hingga aplikasi.',
-          coverUrl: 'https://picsum.photos/seed/network/200/300',
-          type: BookType.physical,
-          stock: 2,
-          category: 'Komputer',
-        ),
-        Book(
-          id: 'book_005',
-          title: 'Kalkulus Jilid 1',
-          author: 'Purcell & Varberg',
-          description:
-              'Buku kalkulus standar untuk mahasiswa teknik dan sains. Membahas limit, turunan, dan integral.',
-          coverUrl: 'https://picsum.photos/seed/kalkulus/200/300',
-          type: BookType.physical,
-          stock: 6,
-          category: 'Matematika',
-        ),
-        Book(
-          id: 'book_006',
-          title: 'Fisika Dasar',
-          author: 'Halliday & Resnick',
-          description:
-              'Buku fisika dasar yang mencakup mekanika, termodinamika, dan gelombang.',
-          coverUrl: 'https://picsum.photos/seed/fisika/200/300',
-          type: BookType.physical,
-          stock: 4,
-          category: 'Fisika',
-        ),
-        Book(
-          id: 'book_007',
-          title: 'Pemrograman Web dengan PHP',
-          author: 'Abdul Kadir',
-          description:
-              'Panduan praktis membuat website dinamis menggunakan PHP dan MySQL.',
-          coverUrl: 'https://picsum.photos/seed/php/200/300',
-          type: BookType.physical,
-          stock: 3,
-          category: 'Komputer',
-        ),
-        Book(
-          id: 'book_008',
-          title: 'Sistem Operasi',
-          author: 'Abraham Silberschatz',
-          description:
-              'Buku referensi tentang konsep sistem operasi modern termasuk proses, memori, dan file system.',
-          coverUrl: 'https://picsum.photos/seed/os/200/300',
-          type: BookType.physical,
-          stock: 2,
-          category: 'Komputer',
-        ),
-        Book(
-          id: 'book_009',
-          title: 'Statistika untuk Penelitian',
-          author: 'Sugiyono',
-          description:
-              'Buku statistika yang banyak digunakan untuk penelitian skripsi dan tesis.',
-          coverUrl: 'https://picsum.photos/seed/statistik/200/300',
-          type: BookType.physical,
-          stock: 5,
-          category: 'Matematika',
-        ),
-        Book(
-          id: 'book_010',
-          title: 'Rekayasa Perangkat Lunak',
-          author: 'Roger S. Pressman',
-          description:
-              'Buku tentang metodologi pengembangan perangkat lunak dari analisis hingga maintenance.',
-          coverUrl: 'https://picsum.photos/seed/rpl/200/300',
-          type: BookType.physical,
-          stock: 3,
-          category: 'Komputer',
-        ),
-      ];
+    // Physical books with real cover images
+    final physicalBooks = _getPhysicalBooks();
 
+    // Seed physical books if no books exist OR update covers if version changed
+    if (_bookBox.isEmpty) {
       for (final book in physicalBooks) {
         await _bookBox.put(book.id, book);
       }
+    } else if (needsUpdate) {
+      // Update existing book covers
+      for (final book in physicalBooks) {
+        final existingBook = _bookBox.get(book.id);
+        if (existingBook != null) {
+          // Update only the cover URL, keep other data
+          final updatedBook = existingBook.copyWith(coverUrl: book.coverUrl);
+          await _bookBox.put(book.id, updatedBook);
+        }
+      }
     }
+
+    // Save current data version
+    if (needsUpdate) {
+      await _settingsBox.put('dataVersion', _dataVersion);
+    }
+  }
+
+  /// Get physical books with real cover images from Open Library
+  List<Book> _getPhysicalBooks() {
+    return [
+      Book(
+        id: 'book_001',
+        title: 'Algoritma dan Pemrograman',
+        author: 'Rinaldi Munir',
+        description:
+            'Buku ini membahas dasar-dasar algoritma dan pemrograman menggunakan bahasa Pascal dan C. Cocok untuk mahasiswa tingkat awal.',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9789792910018-M.jpg',
+        type: BookType.physical,
+        stock: 5,
+        category: 'Komputer',
+      ),
+      Book(
+        id: 'book_002',
+        title: 'Introduction to Algorithms',
+        author: 'Thomas H. Cormen',
+        description:
+            'Introduction to Algorithms. Membahas struktur data dan algoritma secara komprehensif.',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780262033848-M.jpg',
+        type: BookType.physical,
+        stock: 3,
+        category: 'Komputer',
+      ),
+      Book(
+        id: 'book_003',
+        title: 'Database System Concepts',
+        author: 'Abraham Silberschatz',
+        description:
+            'Buku panduan lengkap tentang konsep basis data relasional, SQL, dan normalisasi database.',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780073523323-M.jpg',
+        type: BookType.physical,
+        stock: 4,
+        category: 'Komputer',
+      ),
+      Book(
+        id: 'book_004',
+        title: 'Computer Networks',
+        author: 'Andrew S. Tanenbaum',
+        description:
+            'Buku klasik tentang jaringan komputer yang membahas dari layer fisik hingga aplikasi.',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780132126953-M.jpg',
+        type: BookType.physical,
+        stock: 2,
+        category: 'Komputer',
+      ),
+      Book(
+        id: 'book_005',
+        title: 'Calculus',
+        author: 'James Stewart',
+        description:
+            'Buku kalkulus standar untuk mahasiswa teknik dan sains. Membahas limit, turunan, dan integral.',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9781285740621-M.jpg',
+        type: BookType.physical,
+        stock: 6,
+        category: 'Matematika',
+      ),
+      Book(
+        id: 'book_006',
+        title: 'Fundamentals of Physics',
+        author: 'Halliday & Resnick',
+        description:
+            'Buku fisika dasar yang mencakup mekanika, termodinamika, dan gelombang.',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9781118230718-M.jpg',
+        type: BookType.physical,
+        stock: 4,
+        category: 'Fisika',
+      ),
+      Book(
+        id: 'book_007',
+        title: 'Learning PHP, MySQL & JavaScript',
+        author: 'Robin Nixon',
+        description:
+            'Panduan praktis membuat website dinamis menggunakan PHP dan MySQL.',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9781491978917-M.jpg',
+        type: BookType.physical,
+        stock: 3,
+        category: 'Komputer',
+      ),
+      Book(
+        id: 'book_008',
+        title: 'Operating System Concepts',
+        author: 'Abraham Silberschatz',
+        description:
+            'Buku referensi tentang konsep sistem operasi modern termasuk proses, memori, dan file system.',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9781118063330-M.jpg',
+        type: BookType.physical,
+        stock: 2,
+        category: 'Komputer',
+      ),
+      Book(
+        id: 'book_009',
+        title: 'Statistics',
+        author: 'David Freedman',
+        description:
+            'Buku statistika yang banyak digunakan untuk penelitian skripsi dan tesis.',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780393929720-M.jpg',
+        type: BookType.physical,
+        stock: 5,
+        category: 'Matematika',
+      ),
+      Book(
+        id: 'book_010',
+        title: 'Software Engineering',
+        author: 'Roger S. Pressman',
+        description:
+            'Buku tentang metodologi pengembangan perangkat lunak dari analisis hingga maintenance.',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780078022128-M.jpg',
+        type: BookType.physical,
+        stock: 3,
+        category: 'Komputer',
+      ),
+    ];
   }
 
 

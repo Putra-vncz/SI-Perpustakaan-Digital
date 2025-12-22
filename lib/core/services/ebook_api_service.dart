@@ -86,8 +86,7 @@ class EbookApiService {
     return [];
   }
 
-  /// Curated list of ebooks with reliable placeholder cover URLs
-  /// Using picsum.photos for consistent, always-available covers
+  /// Curated list of ebooks with real book covers from Open Library
   List<Book> _getCuratedEbooks() {
     return [
       Book(
@@ -96,7 +95,7 @@ class EbookApiService {
         author: 'Jane Austen',
         description:
             'A classic novel about love and social standing in early 19th-century England. Follow Elizabeth Bennet as she navigates society and her feelings for Mr. Darcy.',
-        coverUrl: 'https://picsum.photos/seed/pride/200/300',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780141439518-M.jpg',
         type: BookType.ebook,
         stock: 0,
         category: 'Fiction',
@@ -108,7 +107,7 @@ class EbookApiService {
         author: 'Herman Melville',
         description:
             'The epic tale of Captain Ahab\'s obsessive quest for the white whale. A masterpiece of American literature.',
-        coverUrl: 'https://picsum.photos/seed/moby/200/300',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780142437247-M.jpg',
         type: BookType.ebook,
         stock: 0,
         category: 'Fiction',
@@ -120,7 +119,7 @@ class EbookApiService {
         author: 'Mary Shelley',
         description:
             'The story of Victor Frankenstein and his monstrous creation. A pioneering work of science fiction and gothic horror.',
-        coverUrl: 'https://picsum.photos/seed/frank/200/300',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780141439471-M.jpg',
         type: BookType.ebook,
         stock: 0,
         category: 'Fiction',
@@ -132,7 +131,7 @@ class EbookApiService {
         author: 'Bram Stoker',
         description:
             'The classic vampire novel that defined the genre. Follow Jonathan Harker as he encounters the mysterious Count Dracula.',
-        coverUrl: 'https://picsum.photos/seed/dracula/200/300',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780141439846-M.jpg',
         type: BookType.ebook,
         stock: 0,
         category: 'Fiction',
@@ -144,7 +143,7 @@ class EbookApiService {
         author: 'Arthur Conan Doyle',
         description:
             'A collection of twelve short stories featuring the famous detective Sherlock Holmes and his companion Dr. Watson.',
-        coverUrl: 'https://picsum.photos/seed/sherlock/200/300',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780140439083-M.jpg',
         type: BookType.ebook,
         stock: 0,
         category: 'Fiction',
@@ -156,7 +155,7 @@ class EbookApiService {
         author: 'Lewis Carroll',
         description:
             'Follow Alice down the rabbit hole into a fantastical world of wonder. A beloved classic of children\'s literature.',
-        coverUrl: 'https://picsum.photos/seed/alice/200/300',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780141439761-M.jpg',
         type: BookType.ebook,
         stock: 0,
         category: 'Fiction',
@@ -168,7 +167,7 @@ class EbookApiService {
         author: 'F. Scott Fitzgerald',
         description:
             'A portrait of the Jazz Age in all of its decadence and excess. The story of the mysteriously wealthy Jay Gatsby.',
-        coverUrl: 'https://picsum.photos/seed/gatsby/200/300',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780743273565-M.jpg',
         type: BookType.ebook,
         stock: 0,
         category: 'Fiction',
@@ -180,7 +179,7 @@ class EbookApiService {
         author: 'Charles Dickens',
         description:
             'Set during the French Revolution, this novel tells the story of sacrifice and resurrection in London and Paris.',
-        coverUrl: 'https://picsum.photos/seed/twocities/200/300',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780141439600-M.jpg',
         type: BookType.ebook,
         stock: 0,
         category: 'Fiction',
@@ -192,7 +191,7 @@ class EbookApiService {
         author: 'Oscar Wilde',
         description:
             'A philosophical novel about a young man whose portrait ages while he remains young. A tale of beauty, corruption, and morality.',
-        coverUrl: 'https://picsum.photos/seed/dorian/200/300',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780141439570-M.jpg',
         type: BookType.ebook,
         stock: 0,
         category: 'Fiction',
@@ -204,7 +203,7 @@ class EbookApiService {
         author: 'Leo Tolstoy',
         description:
             'An epic novel that chronicles the history of the French invasion of Russia through the stories of five aristocratic families.',
-        coverUrl: 'https://picsum.photos/seed/warpeace/200/300',
+        coverUrl: 'https://covers.openlibrary.org/b/isbn/9780140447934-M.jpg',
         type: BookType.ebook,
         stock: 0,
         category: 'Fiction',
