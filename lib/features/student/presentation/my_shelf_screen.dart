@@ -9,6 +9,7 @@ import '../../auth/auth_provider.dart';
 import '../../books/book_provider.dart';
 import '../../booking/booking_provider.dart';
 import '../../favorite/favorite_provider.dart';
+import '../../loan/loan_provider.dart';
 
 class MyShelfScreen extends ConsumerStatefulWidget {
   const MyShelfScreen({super.key});
@@ -24,7 +25,7 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     // Schedule after build completes
     Future.microtask(() => _loadData());
   }
@@ -34,6 +35,7 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
     if (user != null) {
       await ref.read(bookingProvider.notifier).loadUserBookings(user.id);
       await ref.read(favoriteProvider.notifier).loadFavorites(user.id);
+      await ref.read(loanProvider.notifier).loadUserLoans(user.id);
     }
   }
 
@@ -75,6 +77,7 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
   Widget build(BuildContext context) {
     final bookingState = ref.watch(bookingProvider);
     final favoriteState = ref.watch(favoriteProvider);
+    final loanState = ref.watch(loanProvider);
 
     // Listen for cancel results
     ref.listen<BookingState>(bookingProvider, (previous, next) {
@@ -98,6 +101,29 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
       }
     });
 
+    // Listen for loan results
+    ref.listen<LoanState>(loanProvider, (previous, next) {
+      if (next.successMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.successMessage!),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        ref.read(loanProvider.notifier).clearMessages();
+        _loadData();
+      }
+      if (next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        ref.read(loanProvider.notifier).clearMessages();
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -107,6 +133,7 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
           labelColor: AppColors.primary,
           unselectedLabelColor: AppColors.textSecondary,
           indicatorColor: AppColors.primary,
+          isScrollable: true,
           tabs: [
             Tab(
               icon: const Icon(LucideIcons.heart),
@@ -114,7 +141,11 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
             ),
             Tab(
               icon: const Icon(LucideIcons.calendarClock),
-              text: 'Active (${bookingState.activeBookings.length})',
+              text: 'Booking (${bookingState.activeBookings.length})',
+            ),
+            Tab(
+              icon: const Icon(LucideIcons.bookOpen),
+              text: 'Dipinjam (${loanState.activeLoans.length})',
             ),
             Tab(
               icon: const Icon(LucideIcons.history),
@@ -123,17 +154,258 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
           ],
         ),
       ),
-      body: bookingState.isLoading || favoriteState.isLoading
+      body: bookingState.isLoading || favoriteState.isLoading || loanState.isLoading
           ? const LoadingWidget(message: 'Loading...')
           : TabBarView(
               controller: _tabController,
               children: [
                 _buildFavorites(favoriteState.favoriteBookIds),
                 _buildActiveBookings(bookingState.activeBookings),
+                _buildActiveLoans(loanState.activeLoans),
                 _buildHistoryBookings(bookingState.historyBookings),
               ],
             ),
     );
+  }
+
+  Widget _buildActiveLoans(List<Loan> loans) {
+    if (loans.isEmpty) {
+      return _buildEmptyState(
+        icon: LucideIcons.bookOpen,
+        title: 'Tidak Ada Pinjaman',
+        subtitle: 'Buku yang sedang Anda pinjam akan muncul di sini.',
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async => _loadData(),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: loans.length,
+        itemBuilder: (context, index) {
+          final loan = loans[index];
+          return _buildLoanCard(loan);
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoanCard(Loan loan) {
+    final book = ref.watch(bookByIdProvider(loan.bookId));
+    final remainingTime = loan.dueDate.difference(DateTime.now());
+    final isOverdue = loan.isOverdue;
+    final daysLeft = remainingTime.inDays;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Book Info Row - Clickable
+            GestureDetector(
+              onTap: () => context.push('/detail/${loan.bookId}'),
+              child: Row(
+                children: [
+                  // Book Cover
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      book?.coverUrl ?? '',
+                      width: 60,
+                      height: 90,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 60,
+                        height: 90,
+                        color: Colors.grey.shade200,
+                        child: const Icon(Icons.book),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Book Details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          loan.bookTitle,
+                          style: Theme.of(context).textTheme.titleMedium,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          book?.author ?? '',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        // Due Date Warning
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isOverdue
+                                ? AppColors.error.withValues(alpha: 0.1)
+                                : daysLeft <= 1
+                                    ? AppColors.warning.withValues(alpha: 0.1)
+                                    : AppColors.success.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isOverdue
+                                    ? LucideIcons.alertTriangle
+                                    : LucideIcons.calendar,
+                                size: 14,
+                                color: isOverdue
+                                    ? AppColors.error
+                                    : daysLeft <= 1
+                                        ? AppColors.warning
+                                        : AppColors.success,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                isOverdue
+                                    ? 'Terlambat ${-daysLeft} hari'
+                                    : daysLeft == 0
+                                        ? 'Hari terakhir!'
+                                        : '$daysLeft hari lagi',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isOverdue
+                                      ? AppColors.error
+                                      : daysLeft <= 1
+                                          ? AppColors.warning
+                                          : AppColors.success,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Loan Info
+            Row(
+              children: [
+                Icon(LucideIcons.calendar, size: 14, color: AppColors.textLight),
+                const SizedBox(width: 4),
+                Text(
+                  'Pinjam: ${_formatDate(loan.loanDate)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(width: 16),
+                Icon(
+                  LucideIcons.calendarClock,
+                  size: 14,
+                  color: isOverdue ? AppColors.error : AppColors.textLight,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Batas: ${_formatDate(loan.dueDate)}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: isOverdue ? AppColors.error : null,
+                        fontWeight: isOverdue ? FontWeight.bold : null,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Return Button or Pending Status
+            if (loan.status == LoanStatus.pendingReturn)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.warning),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(LucideIcons.clock, size: 18, color: AppColors.warning),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Menunggu verifikasi admin',
+                      style: TextStyle(
+                        color: AppColors.warning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _showReturnConfirmation(loan),
+                  icon: const Icon(LucideIcons.checkCircle, size: 18),
+                  label: const Text('Ajukan Pengembalian'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showReturnConfirmation(Loan loan) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ajukan Pengembalian?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Buku: ${loan.bookTitle}'),
+            const SizedBox(height: 8),
+            const Text(
+              'Setelah mengajukan pengembalian, silakan serahkan buku fisik ke petugas perpustakaan untuk verifikasi.',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(loanProvider.notifier).requestReturnBook(loan.id);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Ya, Ajukan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   Widget _buildActiveBookings(List<Booking> bookings) {
@@ -170,83 +442,86 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Book Info Row
-            Row(
-              children: [
-                // Book Cover
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    book?.coverUrl ?? '',
-                    width: 60,
-                    height: 90,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+            // Book Info Row - Clickable
+            GestureDetector(
+              onTap: () => context.push('/detail/${booking.bookId}'),
+              child: Row(
+                children: [
+                  // Book Cover
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      book?.coverUrl ?? '',
                       width: 60,
                       height: 90,
-                      color: Colors.grey.shade200,
-                      child: const Icon(Icons.book),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 60,
+                        height: 90,
+                        color: Colors.grey.shade200,
+                        child: const Icon(Icons.book),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                // Book Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        book?.title ?? 'Unknown Book',
-                        style: Theme.of(context).textTheme.titleMedium,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        book?.author ?? '',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      // Expiry Warning
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                  const SizedBox(width: 16),
+                  // Book Details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          book?.title ?? 'Unknown Book',
+                          style: Theme.of(context).textTheme.titleMedium,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        decoration: BoxDecoration(
-                          color: isExpiringSoon
-                              ? AppColors.warning.withValues(alpha: 0.1)
-                              : AppColors.success.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
+                        const SizedBox(height: 4),
+                        Text(
+                          book?.author ?? '',
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              LucideIcons.clock,
-                              size: 14,
-                              color: isExpiringSoon
-                                  ? AppColors.warning
-                                  : AppColors.success,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _formatRemainingTime(remainingTime),
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                        const SizedBox(height: 8),
+                        // Expiry Warning
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isExpiringSoon
+                                ? AppColors.warning.withValues(alpha: 0.1)
+                                : AppColors.success.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                LucideIcons.clock,
+                                size: 14,
                                 color: isExpiringSoon
                                     ? AppColors.warning
                                     : AppColors.success,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 4),
+                              Text(
+                                _formatRemainingTime(remainingTime),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isExpiringSoon
+                                      ? AppColors.warning
+                                      : AppColors.success,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             const Divider(),
@@ -330,6 +605,7 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
+        onTap: () => context.push('/detail/${booking.bookId}'),
         leading: ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: Image.network(
@@ -446,7 +722,7 @@ class _MyShelfScreenState extends ConsumerState<MyShelfScreen>
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () => context.push('/book/$bookId'),
+        onTap: () => context.push('/detail/$bookId'),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),

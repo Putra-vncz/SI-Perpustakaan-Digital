@@ -16,7 +16,7 @@ class HiveDataService {
   static HiveDataService get instance => _instance;
 
   // Data version - increment this to force update book covers
-  static const int _dataVersion = 2;
+  static const int _dataVersion = 3;
 
   // Box names
   static const String _userBoxName = 'users';
@@ -164,7 +164,7 @@ class HiveDataService {
         author: 'Rinaldi Munir',
         description:
             'Buku ini membahas dasar-dasar algoritma dan pemrograman menggunakan bahasa Pascal dan C. Cocok untuk mahasiswa tingkat awal.',
-        coverUrl: 'https://covers.openlibrary.org/b/isbn/9789792910018-M.jpg',
+        coverUrl: 'https://covers.openlibrary.org/b/id/8406786-M.jpg',
         type: BookType.physical,
         stock: 5,
         category: 'Komputer',
@@ -475,8 +475,9 @@ class HiveDataService {
     final updatedBooking = booking.copyWith(status: BookingStatus.claimed);
     await _bookingBox.put(bookingId, updatedBooking);
 
-    // Create loan
+    // Create loan - due date is end of day 3 (23:59:59)
     final now = DateTime.now();
+    final dueDate = DateTime(now.year, now.month, now.day + 3, 23, 59, 59);
     final loan = Loan(
       id: 'loan_${now.millisecondsSinceEpoch}',
       bookingId: bookingId,
@@ -485,7 +486,7 @@ class HiveDataService {
       bookId: booking.bookId,
       bookTitle: book.title,
       loanDate: now,
-      dueDate: now.add(const Duration(days: 14)),
+      dueDate: dueDate,
       status: LoanStatus.active,
     );
 
@@ -493,12 +494,30 @@ class HiveDataService {
     return loan;
   }
 
-  Future<Loan?> returnBook(String loanId) async {
+  /// User requests to return a book (pending admin approval)
+  Future<Loan?> requestReturnBook(String loanId) async {
     await Future.delayed(const Duration(milliseconds: 100));
-    
+
     final loan = _loanBox.get(loanId);
     if (loan == null) return null;
     if (loan.status != LoanStatus.active) return null;
+
+    // Update loan status to pending return
+    final updatedLoan = loan.copyWith(
+      status: LoanStatus.pendingReturn,
+    );
+    await _loanBox.put(loanId, updatedLoan);
+
+    return updatedLoan;
+  }
+
+  /// Admin approves the return (actually returns the book)
+  Future<Loan?> approveReturnBook(String loanId) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    final loan = _loanBox.get(loanId);
+    if (loan == null) return null;
+    if (loan.status != LoanStatus.pendingReturn) return null;
 
     // Update loan
     final updatedLoan = loan.copyWith(
@@ -518,6 +537,62 @@ class HiveDataService {
     }
 
     return updatedLoan;
+  }
+
+  /// Admin rejects the return request (back to active)
+  Future<Loan?> rejectReturnBook(String loanId) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    final loan = _loanBox.get(loanId);
+    if (loan == null) return null;
+    if (loan.status != LoanStatus.pendingReturn) return null;
+
+    // Revert to active status
+    final updatedLoan = loan.copyWith(
+      status: LoanStatus.active,
+    );
+    await _loanBox.put(loanId, updatedLoan);
+
+    return updatedLoan;
+  }
+
+  /// Direct return by admin (without user request)
+  Future<Loan?> returnBook(String loanId) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    final loan = _loanBox.get(loanId);
+    if (loan == null) return null;
+    if (loan.status != LoanStatus.active &&
+        loan.status != LoanStatus.pendingReturn) {
+      return null;
+    }
+
+    // Update loan
+    final updatedLoan = loan.copyWith(
+      returnDate: DateTime.now(),
+      status: LoanStatus.returned,
+    );
+    await _loanBox.put(loanId, updatedLoan);
+
+    // Restore book stock
+    final booking = _bookingBox.get(loan.bookingId);
+    if (booking != null) {
+      final book = _bookBox.get(booking.bookId);
+      if (book != null) {
+        final updatedBook = book.copyWith(stock: book.stock + 1);
+        await _bookBox.put(book.id, updatedBook);
+      }
+    }
+
+    return updatedLoan;
+  }
+
+  /// Get all pending return loans (for admin)
+  Future<List<Loan>> getPendingReturnLoans() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    return _loanBox.values
+        .where((l) => l.status == LoanStatus.pendingReturn)
+        .toList();
   }
 
   Future<List<Loan>> getUserLoans(String userId) async {

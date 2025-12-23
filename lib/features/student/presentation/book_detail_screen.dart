@@ -301,6 +301,12 @@ class BookDetailScreen extends ConsumerWidget {
   ) {
     final favoriteState = ref.watch(favoriteProvider);
     final isFavorite = favoriteState.isFavorite(book.id);
+    final isAdmin = authState.isAdmin;
+
+    // Jika admin, tidak tampilkan bottom bar
+    if (isAdmin) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),

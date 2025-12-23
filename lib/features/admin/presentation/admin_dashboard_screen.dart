@@ -26,6 +26,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     await Future.wait([
       ref.read(loanProvider.notifier).loadActiveBookings(),
       ref.read(loanProvider.notifier).loadAllLoans(),
+      ref.read(loanProvider.notifier).loadPendingReturnLoans(),
     ]);
   }
 
@@ -201,6 +202,20 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
+                icon: LucideIcons.undo2,
+                label: 'Pending Return',
+                value: '${loanState.pendingReturnLoans.length}',
+                color: AppColors.secondary,
+                onTap: () => context.push('/admin/list/pendingReturn'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
                 icon: LucideIcons.alertTriangle,
                 label: 'Terlambat',
                 value: '${loanState.overdueLoans.length}',
@@ -208,6 +223,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 onTap: () => context.push('/admin/list/overdue'),
               ),
             ),
+            const SizedBox(width: 12),
+            const Expanded(child: SizedBox()),
           ],
         ),
       ],

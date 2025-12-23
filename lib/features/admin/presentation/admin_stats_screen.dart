@@ -55,6 +55,7 @@ class _AdminStatsScreenState extends ConsumerState<AdminStatsScreen> {
     int active = 0;
     int returned = 0;
     int overdue = 0;
+    int pendingReturn = 0;
 
     for (final loan in loans) {
       final status = loan.effectiveStatus;
@@ -65,6 +66,8 @@ class _AdminStatsScreenState extends ConsumerState<AdminStatsScreen> {
           returned++;
         case LoanStatus.overdue:
           overdue++;
+        case LoanStatus.pendingReturn:
+          pendingReturn++;
       }
     }
 
@@ -73,6 +76,7 @@ class _AdminStatsScreenState extends ConsumerState<AdminStatsScreen> {
       'active': active,
       'returned': returned,
       'overdue': overdue,
+      'pendingReturn': pendingReturn,
     };
   }
 

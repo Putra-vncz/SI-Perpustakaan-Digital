@@ -7,6 +7,7 @@ enum LoanFilter { all, active, returned, overdue }
 class LoanState {
   final List<Loan> loans;
   final List<Booking> allActiveBookings; // For admin view
+  final List<Loan> pendingReturnLoans; // For admin view
   final bool isLoading;
   final String? error;
   final String? successMessage;
@@ -15,20 +16,29 @@ class LoanState {
   const LoanState({
     this.loans = const [],
     this.allActiveBookings = const [],
+    this.pendingReturnLoans = const [],
     this.isLoading = false,
     this.error,
     this.successMessage,
     this.filter = LoanFilter.all,
   });
 
-  List<Loan> get activeLoans =>
-      loans.where((l) => l.status == LoanStatus.active && !l.isOverdue).toList();
+  List<Loan> get activeLoans => loans
+      .where((l) =>
+          (l.status == LoanStatus.active ||
+              l.status == LoanStatus.pendingReturn) &&
+          !l.isOverdue)
+      .toList();
 
   List<Loan> get returnedLoans =>
       loans.where((l) => l.status == LoanStatus.returned).toList();
 
-  List<Loan> get overdueLoans =>
-      loans.where((l) => l.status == LoanStatus.active && l.isOverdue).toList();
+  List<Loan> get overdueLoans => loans
+      .where((l) =>
+          (l.status == LoanStatus.active ||
+              l.status == LoanStatus.pendingReturn) &&
+          l.isOverdue)
+      .toList();
 
   List<Loan> get filteredLoans {
     switch (filter) {
@@ -46,6 +56,7 @@ class LoanState {
   LoanState copyWith({
     List<Loan>? loans,
     List<Booking>? allActiveBookings,
+    List<Loan>? pendingReturnLoans,
     bool? isLoading,
     String? error,
     String? successMessage,
@@ -55,6 +66,7 @@ class LoanState {
     return LoanState(
       loans: loans ?? this.loans,
       allActiveBookings: allActiveBookings ?? this.allActiveBookings,
+      pendingReturnLoans: pendingReturnLoans ?? this.pendingReturnLoans,
       isLoading: isLoading ?? this.isLoading,
       error: clearMessages ? null : error,
       successMessage: clearMessages ? null : successMessage,
@@ -205,8 +217,12 @@ class LoanNotifier extends Notifier<LoanState> {
         return l;
       }).toList();
 
+      final updatedPendingReturns =
+          state.pendingReturnLoans.where((l) => l.id != loanId).toList();
+
       state = state.copyWith(
         loans: updatedLoans,
+        pendingReturnLoans: updatedPendingReturns,
         isLoading: false,
         successMessage: 'Book returned successfully!',
       );
@@ -218,6 +234,135 @@ class LoanNotifier extends Notifier<LoanState> {
         error: 'An error occurred: $e',
       );
       return false;
+    }
+  }
+
+  /// User requests to return a book (pending admin approval)
+  Future<bool> requestReturnBook(String loanId) async {
+    state = state.copyWith(isLoading: true, clearMessages: true);
+
+    try {
+      final loan = await _mockService.requestReturnBook(loanId);
+
+      if (loan == null) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Failed to request return.',
+        );
+        return false;
+      }
+
+      // Update local state
+      final updatedLoans = state.loans.map((l) {
+        if (l.id == loanId) return loan;
+        return l;
+      }).toList();
+
+      state = state.copyWith(
+        loans: updatedLoans,
+        isLoading: false,
+        successMessage: 'Permintaan pengembalian berhasil! Menunggu verifikasi admin.',
+      );
+
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'An error occurred: $e',
+      );
+      return false;
+    }
+  }
+
+  /// Admin approves return request
+  Future<bool> approveReturnBook(String loanId) async {
+    state = state.copyWith(isLoading: true, clearMessages: true);
+
+    try {
+      final loan = await _mockService.approveReturnBook(loanId);
+
+      if (loan == null) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Failed to approve return.',
+        );
+        return false;
+      }
+
+      // Update local state
+      final updatedLoans = state.loans.map((l) {
+        if (l.id == loanId) return loan;
+        return l;
+      }).toList();
+
+      final updatedPendingReturns =
+          state.pendingReturnLoans.where((l) => l.id != loanId).toList();
+
+      state = state.copyWith(
+        loans: updatedLoans,
+        pendingReturnLoans: updatedPendingReturns,
+        isLoading: false,
+        successMessage: 'Pengembalian buku disetujui!',
+      );
+
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'An error occurred: $e',
+      );
+      return false;
+    }
+  }
+
+  /// Admin rejects return request
+  Future<bool> rejectReturnBook(String loanId) async {
+    state = state.copyWith(isLoading: true, clearMessages: true);
+
+    try {
+      final loan = await _mockService.rejectReturnBook(loanId);
+
+      if (loan == null) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Failed to reject return.',
+        );
+        return false;
+      }
+
+      // Update local state
+      final updatedLoans = state.loans.map((l) {
+        if (l.id == loanId) return loan;
+        return l;
+      }).toList();
+
+      final updatedPendingReturns =
+          state.pendingReturnLoans.where((l) => l.id != loanId).toList();
+
+      state = state.copyWith(
+        loans: updatedLoans,
+        pendingReturnLoans: updatedPendingReturns,
+        isLoading: false,
+        successMessage: 'Permintaan pengembalian ditolak.',
+      );
+
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'An error occurred: $e',
+      );
+      return false;
+    }
+  }
+
+  /// Load pending return loans (Admin)
+  Future<void> loadPendingReturnLoans() async {
+    try {
+      final pendingReturns = await _mockService.getPendingReturnLoans();
+      state = state.copyWith(pendingReturnLoans: pendingReturns);
+    } catch (e) {
+      // Silent fail
     }
   }
 

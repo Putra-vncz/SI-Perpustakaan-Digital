@@ -10,4 +10,6 @@ enum LoanStatus {
   returned,
   @HiveField(2)
   overdue,
+  @HiveField(3)
+  pendingReturn,
 }

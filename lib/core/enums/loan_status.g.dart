@@ -19,6 +19,8 @@ class LoanStatusAdapter extends TypeAdapter<LoanStatus> {
         return LoanStatus.returned;
       case 2:
         return LoanStatus.overdue;
+      case 3:
+        return LoanStatus.pendingReturn;
       default:
         return LoanStatus.active;
     }
@@ -35,6 +37,9 @@ class LoanStatusAdapter extends TypeAdapter<LoanStatus> {
         break;
       case LoanStatus.overdue:
         writer.writeByte(2);
+        break;
+      case LoanStatus.pendingReturn:
+        writer.writeByte(3);
         break;
     }
   }
