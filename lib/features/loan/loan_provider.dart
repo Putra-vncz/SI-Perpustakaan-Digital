@@ -6,6 +6,7 @@ enum LoanFilter { all, active, returned, overdue }
 
 class LoanState {
   final List<Loan> loans;
+  final List<Loan> allLoans; // All loans for statistics
   final List<Booking> allActiveBookings; // For admin view
   final List<Loan> pendingReturnLoans; // For admin view
   final bool isLoading;
@@ -15,6 +16,7 @@ class LoanState {
 
   const LoanState({
     this.loans = const [],
+    this.allLoans = const [],
     this.allActiveBookings = const [],
     this.pendingReturnLoans = const [],
     this.isLoading = false,
@@ -55,6 +57,7 @@ class LoanState {
 
   LoanState copyWith({
     List<Loan>? loans,
+    List<Loan>? allLoans,
     List<Booking>? allActiveBookings,
     List<Loan>? pendingReturnLoans,
     bool? isLoading,
@@ -65,6 +68,7 @@ class LoanState {
   }) {
     return LoanState(
       loans: loans ?? this.loans,
+      allLoans: allLoans ?? this.allLoans,
       allActiveBookings: allActiveBookings ?? this.allActiveBookings,
       pendingReturnLoans: pendingReturnLoans ?? this.pendingReturnLoans,
       isLoading: isLoading ?? this.isLoading,
@@ -102,7 +106,7 @@ class LoanNotifier extends Notifier<LoanState> {
 
     try {
       final loans = await _mockService.getAllLoans();
-      state = state.copyWith(loans: loans, isLoading: false);
+      state = state.copyWith(loans: loans, allLoans: loans, isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

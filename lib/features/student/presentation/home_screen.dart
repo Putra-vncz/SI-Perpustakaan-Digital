@@ -185,6 +185,13 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
 
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+                  // Loan Statistics Chart
+                  const SliverToBoxAdapter(
+                    child: LoanStatisticsChart(),
+                  ),
+
                   const SliverToBoxAdapter(child: SizedBox(height: 100)),
                 ],
               ),

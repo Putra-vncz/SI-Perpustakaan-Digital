@@ -46,6 +46,7 @@ dependencies:
   http: ^1.2.0
   url_launcher: ^6.2.5
   webview_flutter: ^4.10.0
+  fl_chart: ^0.69.2
 
 dev_dependencies:
   flutter_test:
